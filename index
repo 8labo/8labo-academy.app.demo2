@@ -1,1 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>8LABO ACADEMY</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card-ui { 
+            background: white; border-radius: 2rem; padding: 1.5rem; border: 1px solid #f1f5f9; 
+            box-shadow: 0 10px 25px -5px rgba(0, 91, 172, 0.05); 
+        }
 
+        .login-input { 
+            width: 100% !important; box-sizing: border-box !important; border-radius: 1.5rem; 
+            border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; font-weight: bold; outline: none; 
+            background: white; color: #1e293b; font-size: 16px; transition: all 0.2s;
+        }
+        .login-input:focus { border-color: #005bac; }
+        
+        .login-btn {
+            background-color: #f39800; color: white; padding: 1.25rem; border-radius: 1.5rem;
+            font-weight: 900; font-size: 18px; box-shadow: 0 10px 20px -5px rgba(243, 152, 0, 0.4);
+            width: 100%; border: none; transition: all 0.2s;
+        }
+        .login-btn:active { transform: scale(0.96); opacity: 0.9; }
+        .login-btn:disabled { background-color: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+        
+        select.login-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1.5rem center; background-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwOwr0NAdXrPZ0BBz-YXbzPrxX0qO7_Zk5lezIP5yNzcPDsDG7ERBLLsnJybkl33nBkoQ/exec"; 
+        const GOOGLE_CALENDAR_EMBED_URL = "https://calendar.google.com/calendar/embed?src=ja.japanese%23holiday%40group.v.calendar.google.com&ctz=Asia%2FTokyo";
+
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                Home: <g><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></g>,
+                Calendar: <g><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></g>,
+                TrendingUp: <g><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></g>,
+                MessageCircle: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>,
+                BookOpen: <g><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></g>,
+                User: <g><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>,
+                ShieldCheck: <g><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></g>,
+                ChevronLeft: <polyline points="15 18 9 12 15 6"/>,
+                ChevronRight: <polyline points="9 18 15 12 9 6"/>,
+                Bell: <g><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></g>,
+                X: <g><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></g>,
+                MapPin: <g><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></g>,
+                Eye: <g><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></g>,
+                EyeOff: <g><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></g>,
+                Hammer: <path d="m15 5 4 4-10 10-4-4Z" />,
+                Inbox: <g><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></g>,
+            };
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || null}
+                </svg>
+            );
+        };
+
+        const App = () => {
+            const [studentInfo, setStudentInfo] = useState(null);
+            const [loginId, setLoginId] = useState("");
+            const [password, setPassword] = useState("");
+            const [showPass, setShowPass] = useState(false);
+            const [view, setView] = useState('home');
+            const [allEvents, setAllEvents] = useState([]);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [absenceDate, setAbsenceDate] = useState("");
+            const [makeupOption, setMakeupOption] = useState("later"); 
+            const [transferDate, setTransferDate] = useState("");
+            const [formStatus, setFormStatus] = useState({ type: '', msg: '' });
+            const [regForm, setRegForm] = useState({ name: '', kana: '', parent: '', phone: '', pass: '', grade: '', mail: '' });
+            const [regStatus, setRegStatus] = useState({ loading: false, error: '', successId: '' });
+            const [readNoticeIds, setReadNoticeIds] = useState(() => JSON.parse(localStorage.getItem('read_notices') || '[]'));
+            const [selectedNotice, setSelectedNotice] = useState(null);
+
+            const notices = [{ id: 1, date: '2026.02.04', title: '2月の測定会について', body: '来週から光電管を使った50m走の測定を行います。動ける服装で来てください！' }];
+
+            const handleLogin = async (e) => {
+                if (e) e.preventDefault();
+                setIsSubmitting(true);
+                try {
+                    const url = `${GAS_URL}?action=getStudent&id=${encodeURIComponent(loginId.trim())}&pass=${encodeURIComponent(password.trim())}`;
+                    const resp = await fetch(url);
+                    const data = await resp.json();
+                    if (data.status === "success") { setStudentInfo(data.student); fetchSchedule(); }
+                    else { alert(data.message); }
+                } catch (err) { alert("通信エラー：設定を確認してください。"); }
+                finally { setIsSubmitting(false); }
+            };
+
+            const fetchSchedule = async () => {
+                try {
+                    const resp = await fetch(`${GAS_URL}?action=getSchedule`);
+                    const data = await resp.json();
+                    setAllEvents(data.events || []);
+                } catch (err) { console.error("予定取得エラー"); }
+            };
+
+            const validateRegPassword = (pass) => {
+                const regex = /^[a-z0-9]{6,12}$/;
+                return regex.test(pass);
+            };
+
+            const handleRegisterSubmit = async (e) => {
+                e.preventDefault();
+                if (!validateRegPassword(regForm.pass)) {
+                    setRegStatus({ ...regStatus, error: 'パスワードは半角英小文字・数字の6〜12文字で入力してください。' });
+                    return;
+                }
+                setRegStatus({ loading: true, error: '', successId: '' });
+                try {
+                    const params = new URLSearchParams({ action: 'registerVisitor', ...regForm });
+                    const resp = await fetch(`${GAS_URL}?${params.toString()}`);
+                    const data = await resp.json();
+                    if (data.status === 'success') { setRegStatus({ loading: false, error: '', successId: data.newId }); }
+                    else { setRegStatus({ loading: false, error: '登録エラー', successId: '' }); }
+                } catch (err) { setRegStatus({ loading: false, error: '通信失敗', successId: '' }); }
+            };
+
+            const handleAbsenceSubmit = async (e) => {
+                e.preventDefault();
+                const now = new Date();
+                if (new Date(absenceDate).toDateString() === now.toDateString() && now.getHours() >= 14) {
+                    alert("当日の14時以降は、お電話でご連絡ください。"); return;
+                }
+                setIsSubmitting(true);
+                try {
+                    const url = `${GAS_URL}?action=absence&studentName=${encodeURIComponent(studentInfo.name)}&absenceDate=${absenceDate}&transferDate=${makeupOption === 'later' ? '後日設定' : transferDate}`;
+                    await fetch(url);
+                    setFormStatus({ type: 'success', msg: '送信完了しました' });
+                    setTimeout(() => { setView('home'); setFormStatus({type:'',msg:''}); setAbsenceDate(''); setTransferDate(''); }, 2000);
+                } catch (err) { setFormStatus({ type: 'error', msg: '送信失敗' }); }
+                finally { setIsSubmitting(false); }
+            };
+
+            const markAsRead = (id) => {
+                const updated = [...readNoticeIds, id];
+                setReadNoticeIds(updated);
+                localStorage.setItem('read_notices', JSON.stringify(updated));
+                setSelectedNotice(null);
+            };
+
+            const isVisitor = studentInfo?.classes?.length === 0;
+            const deptDisplay = isVisitor ? "ビジター" : studentInfo?.classes?.join("、");
+            const unreadNotices = notices.filter(n => !readNoticeIds.includes(n.id));
+
+            const SubHeader = ({ title, sub }) => (
+                <div className="relative flex items-center mb-4 px-1 pt-2 animate-in border-b border-slate-100 pb-2">
+                    <button onClick={() => setView('home')} className="w-10 h-10 bg-white shadow-sm rounded-2xl flex items-center justify-center text-slate-400 active:scale-90 transition-all z-20">
+                        <Icon name="ChevronLeft" size={24} />
+                    </button>
+                    <div className="ml-4">
+                        <h2 className="text-xl font-black text-slate-800 italic uppercase leading-none tracking-tighter">{title}</h2>
+                        <p className="text-[8px] font-black text-[#005bac] tracking-[0.2em] uppercase mt-1 opacity-50">{sub}</p>
+                    </div>
+                </div>
+            );
+
+            const ComingSoon = () => (
+                <div className="flex-1 flex flex-col items-center justify-center py-20 animate-in">
+                    <div className="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner text-slate-300"><Icon name="Hammer" size={40} /></div>
+                    <h3 className="text-lg font-black text-slate-400 italic uppercase">Coming Soon</h3>
+                    <p className="text-slate-400 text-[10px] font-bold mt-4 text-center leading-relaxed px-10">この機能は現在準備中です。順次アップデート予定ですので、楽しみにお待ちください！</p>
+                </div>
+            );
+
+            return (
+                <div className="w-full max-w-[400px] mx-auto min-h-screen bg-[#f8fafc] flex flex-col relative overflow-hidden text-slate-800 shadow-2xl">
+                    
+                    {/* お知らせ詳細 */}
+                    {selectedNotice && (
+                        <div className="fixed inset-0 z-[130] flex items-center justify-center p-6">
+                            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={() => setSelectedNotice(null)}></div>
+                            <div className="bg-white w-full rounded-[2.5rem] p-8 shadow-2xl z-10 animate-in border border-white">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="bg-blue-50 text-blue-600 p-3 rounded-2xl"><Icon name="Bell" size={24} /></div>
+                                    <button onClick={() => setSelectedNotice(null)} className="p-2 text-slate-300"><Icon name="X" size={24} /></button>
+                                </div>
+                                <div className="space-y-4">
+                                    <div><span className="text-[10px] font-black text-blue-500">{selectedNotice.date}</span><h3 className="text-xl font-black text-slate-800 mt-1">{selectedNotice.title}</h3></div>
+                                    <p className="text-sm font-medium text-slate-600 leading-relaxed py-2">{selectedNotice.body}</p>
+                                    <button onClick={() => markAsRead(selectedNotice.id)} className="w-full bg-[#005bac] text-white font-black py-4 rounded-2xl shadow-xl">確認しました</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {!studentInfo && view !== 'register' && (
+                        <div className="flex-1 p-8 bg-[#005bac] flex flex-col items-center justify-center text-white relative">
+                            <div className="w-20 h-20 bg-white rounded-[1.5rem] flex items-center justify-center mb-6 shadow-2xl"><span className="text-[#005bac] font-black text-4xl italic">8</span></div>
+                            <h1 className="text-2xl font-black mb-12 italic uppercase tracking-tighter leading-none text-center">8LABO ACADEMY</h1>
+                            <form onSubmit={handleLogin} className="w-full space-y-6">
+                                <div className="w-full"><input type="text" className="login-input" placeholder="塾生ID または ビジターID" value={loginId} onChange={e=>setLoginId(e.target.value)} required /></div>
+                                <div className="w-full relative">
+                                    <input type={showPass ? "text" : "password"} className="login-input" placeholder="パスワードを入力" value={password} onChange={e=>setPassword(e.target.value)} required />
+                                    <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 focus:text-[#005bac]">
+                                        <Icon name={showPass ? "EyeOff" : "Eye"} size={20} />
+                                    </button>
+                                </div>
+                                <button type="submit" disabled={isSubmitting} className="login-btn">{isSubmitting ? "認証中..." : "ログイン"}</button>
+                                <div className="text-center pt-4"><button onClick={() => setView('register')} className="text-xs font-bold text-white/70 tracking-widest underline decoration-white/40 underline-offset-8 bg-transparent border-none">新規登録（初めての方はこちら）</button></div>
+                            </form>
+                        </div>
+                    )}
+
+                    {view === 'register' && !studentInfo && (
+                        <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 animate-in pt-4 px-6 pb-12 bg-[#f8fafc]">
+                            <SubHeader title="Join Us" sub="Registration" />
+                            {!regStatus.successId ? (
+                                <div className="card-ui space-y-4">
+                                    <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                                        {[
+                                            { label: 'お名前', key: 'name', type: 'text', ph: '山田 太郎' },
+                                            { label: 'ふりがな', key: 'kana', type: 'text', ph: 'やまだ たろう' },
+                                            { label: '学年', key: 'grade', type: 'select', options: ["小学1年生","小学2年生","小学3年生","小学4年生","小学5年生","小学6年生","中学1年生","中学2年生","中学3年生"] },
+                                            { label: '保護者様氏名', key: 'parent', type: 'text', ph: '山田 一郎' },
+                                            { label: '緊急連絡先（電話）', key: 'phone', type: 'tel', ph: '090-0000-0000' },
+                                            { label: 'メールアドレス', key: 'mail', type: 'email', ph: 'sample@email.com' },
+                                        ].map(f => (
+                                            <div key={f.key} className="space-y-1">
+                                                <label className="text-[8px] font-black uppercase ml-1 tracking-widest text-slate-400">{f.label} <span className="text-red-400">*</span></label>
+                                                {f.type === 'select' ? (
+                                                    <select className="login-input shadow-none bg-slate-50 !py-3" value={regForm[f.key]} onChange={e=>setRegForm({...regForm, [f.key]: e.target.value})} required>
+                                                        <option value="">選択してください</option>
+                                                        {f.options.map(o=><option key={o} value={o}>{o}</option>)}
+                                                    </select>
+                                                ) : (
+                                                    <input type={f.type} className="login-input shadow-none bg-slate-50 !py-3" placeholder={f.ph} value={regForm[f.key]} onChange={e=>setRegForm({...regForm, [f.key]: e.target.value})} required />
+                                                )}
+                                            </div>
+                                        ))}
+                                        
+                                        <div className="space-y-1">
+                                            <label className="text-[8px] font-black uppercase ml-1 tracking-widest text-slate-400">希望パスワード <span className="text-red-400">*</span></label>
+                                            <div className="relative">
+                                                <input 
+                                                    type={showPass ? "text" : "password"} 
+                                                    className={`login-input shadow-none bg-slate-50 !py-3 ${regForm.pass && !validateRegPassword(regForm.pass) ? 'border-red-300' : ''}`} 
+                                                    placeholder="半角英小文字・数字 6〜12桁" 
+                                                    value={regForm.pass} 
+                                                    onChange={e=>setRegForm({...regForm, pass: e.target.value})} 
+                                                    required 
+                                                />
+                                                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 focus:text-[#005bac]">
+                                                    <Icon name={showPass ? "EyeOff" : "Eye"} size={18} />
+                                                </button>
+                                            </div>
+                                            <p className="text-[9px] font-bold text-slate-400 mt-1 ml-1 leading-relaxed">※半角英小文字・数字 6〜12桁</p>
+                                        </div>
+
+                                        {regStatus.error && <div className="text-red-500 text-[10px] font-bold text-center bg-red-50 p-3 rounded-xl border border-red-100">{regStatus.error}</div>}
+                                        
+                                        <button 
+                                            type="submit" 
+                                            disabled={regStatus.loading || !validateRegPassword(regForm.pass)} 
+                                            className="login-btn bg-[#005bac] shadow-none mt-4 disabled:opacity-50"
+                                        >
+                                            {regStatus.loading ? "登録中..." : "IDを発行する"}
+                                        </button>
+                                    </form>
+                                </div>
+                            ) : (
+                                <div className="card-ui space-y-6 text-center animate-in">
+                                    <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto text-3xl">✓</div>
+                                    <h3 className="font-black text-xl text-slate-800">登録完了！</h3>
+                                    <div className="bg-slate-50 p-6 rounded-3xl space-y-4 border border-slate-100 shadow-inner">
+                                        <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Login ID</p><p className="text-3xl font-black text-[#005bac] tracking-tight">{regStatus.successId}</p></div>
+                                        <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</p><p className="text-xl font-black text-slate-700 tracking-tight">{regForm.pass}</p></div>
+                                    </div>
+                                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100"><p className="text-[10px] font-bold text-red-500 leading-relaxed text-left">※このIDとパスワードはログインに必要です。忘れないよう必ずメモかスクリーンショットを撮ってください！</p></div>
+                                    <button onClick={() => { setView('home'); setRegStatus({loading:false,error:'',successId:''}); }} className="login-btn shadow-none">ログイン画面へ</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {studentInfo && (
+                        <>
+                            <header className="bg-[#005bac] text-white px-8 pt-8 pb-8 shrink-0 shadow-md text-center"><h1 className="text-lg font-black tracking-tighter italic uppercase">8LABO ACADEMY</h1></header>
+                            <main className="flex-1 px-6 -mt-3 pb-32 relative z-10 space-y-6 overflow-y-auto hide-scrollbar">
+                                {view === 'home' && (
+                                    <div className="animate-in space-y-6 pt-4">
+                                        <button onClick={() => setView('settings')} className="w-full bg-white p-6 rounded-[2.5rem] shadow-xl shadow-blue-900/5 border border-white flex items-center justify-between active:scale-98 transition-all">
+                                            <div className="flex items-center gap-5 text-left">
+                                                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-slate-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-white font-black italic text-[#005bac]">{studentInfo.id.startsWith('VS') ? "V" : "S"}</div>
+                                                <div>
+                                                    <h2 className="font-black text-slate-800 text-2xl leading-none">{studentInfo.name} <span className="text-xs text-slate-400 font-bold ml-1">{studentInfo.id.startsWith('VS') ? "様" : "くん"}</span></h2>
+                                                    <div className="mt-2 space-y-1">
+                                                        <div className="flex items-center gap-1.5"><Icon name="ShieldCheck" size={14} className="text-blue-500" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {studentInfo.id}</span></div>
+                                                        <div className="flex items-center gap-1.5"><Icon name="MapPin" size={14} className="text-blue-400" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">所属: {deptDisplay}</span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Icon name="ChevronRight" size={24} className="text-slate-200" />
+                                        </button>
+
+                                        {unreadNotices.length > 0 && (
+                                            <div className="space-y-2 animate-in">
+                                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">NEWS</h3>
+                                                {unreadNotices.map(n => (
+                                                    <button key={n.id} onClick={() => setSelectedNotice(n)} className="w-full bg-white p-4 rounded-[1.8rem] shadow-sm border border-blue-50 flex items-center gap-3 active:scale-98 transition-all">
+                                                        <div className="bg-blue-600 text-white p-2 rounded-xl shadow-lg"><Icon name="Bell" size={16} /></div>
+                                                        <div className="text-left overflow-hidden flex-1"><h4 className="text-xs font-black text-slate-800 truncate">{n.title}</h4><p className="text-[8px] text-slate-400 font-black mt-0.5">{n.date}</p></div>
+                                                        <Icon name="ChevronRight" size={14} className="text-slate-200" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {[
+                                                { id: 'schedule', label: 'スケジュール', icon: 'Calendar', color: 'bg-indigo-500' },
+                                                { id: 'contact', label: '欠席・連絡', icon: 'MessageCircle', color: 'bg-orange-500' },
+                                                { id: 'carte', label: '脳育カルテ', icon: 'TrendingUp', color: 'bg-blue-600' },
+                                                { id: 'video', label: '参考資料', icon: 'BookOpen', color: 'bg-slate-700' },
+                                            ].map(item => (
+                                                <button key={item.id} onClick={() => setView(item.id)} className="card-ui flex flex-col items-center justify-center gap-3 border border-white shadow-sm active:scale-95 transition-all">
+                                                    <div className={`${item.color} text-white p-4 rounded-2xl shadow-lg`}><Icon name={item.icon} size={28} /></div>
+                                                    <span className="text-[10px] font-black text-slate-500 uppercase">{item.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {view === 'schedule' && (
+                                    <div className="space-y-6 animate-in pt-4 pb-10">
+                                        <SubHeader title="Schedule" sub="Calendar" />
+                                        <div className="card-ui p-0 overflow-hidden h-[320px] shadow-indigo-900/5"><iframe src={GOOGLE_CALENDAR_EMBED_URL} style={{ border: 0, width: '100%', height: '100%' }} frameBorder="0" scrolling="no"></iframe></div>
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 italic">Class Lessons</h3>
+                                        {allEvents.filter(e => e.className === "全クラス" || studentInfo.classes.includes(e.className)).map((e, i) => (
+                                            <div key={i} className="bg-white p-5 rounded-[2rem] shadow-sm flex items-center gap-4 border border-slate-50">
+                                                <div className="bg-blue-50 text-[#005bac] p-3 rounded-2xl min-w-[60px] text-center font-black shadow-inner"><div className="text-[8px] opacity-40">{new Date(e.date).getMonth()+1}月</div><div className="text-lg leading-none">{new Date(e.date).getDate()}</div></div>
+                                                <div><div className="text-[8px] font-black text-blue-500 uppercase">{e.className}</div><h4 className="text-sm font-black text-slate-800 leading-tight">{e.title}</h4><div className="flex items-center gap-1 text-[9px] text-slate-400 mt-1 font-bold"><Icon name="MapPin" size={10} /> {e.location}</div></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {view === 'contact' && (
+                                    <div className="space-y-6 animate-in pt-4 px-1">
+                                        <SubHeader title="Contact" sub="Absence" />
+                                        <div className="card-ui space-y-6">
+                                            <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p className="text-[9px] text-blue-800 font-bold leading-relaxed">当日の14時以降は、お電話にて直接ご連絡をお願いいたします。</p></div>
+                                            <form onSubmit={handleAbsenceSubmit} className="space-y-6 text-left">
+                                                <div className="space-y-2 w-full"><label className="text-[9px] font-black uppercase ml-1 tracking-widest text-slate-400">欠席する日</label><input type="date" className="login-input shadow-none bg-slate-50 !w-full" value={absenceDate} onChange={e=>setAbsenceDate(e.target.value)} required /></div>
+                                                <div className="space-y-2 w-full"><label className="text-[9px] font-black uppercase ml-1 tracking-widest text-slate-400">振替日の設定</label>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button type="button" onClick={()=>setMakeupOption('later')} className={`p-4 rounded-xl text-[10px] font-black border ${makeupOption === 'later' ? 'bg-[#005bac] text-white border-[#005bac]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>後日決める</button>
+                                                        <button type="button" onClick={()=>setMakeupOption('now')} className={`p-4 rounded-xl text-[10px] font-black border ${makeupOption === 'now' ? 'bg-[#005bac] text-white border-[#005bac]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>今すぐ指定</button>
+                                                    </div>
+                                                </div>
+                                                {makeupOption === 'now' && (
+                                                    <div className="space-y-2 animate-in w-full">
+                                                        <label className="text-[9px] font-black uppercase ml-1 tracking-widest text-slate-400">今後の予定から選択</label>
+                                                        <select className="login-input shadow-none bg-slate-50 !w-full" value={transferDate} onChange={e=>setTransferDate(e.target.value)} required>
+                                                            <option value="">クラスを選択してください</option>
+                                                            {allEvents.filter(e => e.className === "全クラス" || studentInfo.classes.includes(e.className)).map((ev,idx) => (
+                                                                <option key={idx} value={`${ev.date} ${ev.title}`}>{ev.date} : {ev.title}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                                <button type="submit" disabled={isSubmitting} className="login-btn shadow-none italic">{isSubmitting ? "送信中..." : "連絡を送信する"}</button>
+                                                {formStatus.msg && <div className={`p-4 rounded-2xl text-[10px] font-bold text-center ${formStatus.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{formStatus.msg}</div>}
+                                            </form>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {view === 'settings' && (
+                                    <div className="space-y-5 animate-in pt-4 px-1 pb-10">
+                                        <SubHeader title="Personal" sub="Account & History" />
+                                        <div className="card-ui flex flex-col items-center space-y-6">
+                                            <div className="w-20 h-20 bg-slate-50 rounded-[2.2rem] flex items-center justify-center text-4xl shadow-inner border border-slate-50 mb-2 text-[#005bac]/20"><Icon name="User" size={40} /></div>
+                                            <div className="text-center space-y-1">
+                                                <h3 className="font-black text-2xl text-slate-800">{studentInfo.name} 様</h3>
+                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest pt-1">所属: {deptDisplay}</p>
+                                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">ID: {studentInfo.id}</p>
+                                            </div>
+                                            <div className="w-full h-px bg-slate-50"></div>
+                                            <div className="w-full space-y-3">
+                                                <button onClick={() => setView('notice-history')} className="w-full flex items-center justify-between bg-slate-50 p-5 rounded-[1.8rem] border border-slate-100 active:bg-slate-100 transition-colors">
+                                                    <div className="flex items-center gap-3"><div className="bg-white p-2 rounded-xl shadow-sm text-blue-600"><Icon name="Inbox" size={18} /></div><span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">お知らせ履歴</span></div>
+                                                    <Icon name="ChevronRight" size={16} className="text-slate-300" />
+                                                </button>
+                                                {!studentInfo.lineId && (
+                                                    <button onClick={() => alert("LINE連携準備中")} className="w-full flex items-center justify-center gap-3 bg-[#06C755] text-white p-5 rounded-[1.8rem] font-black active:scale-95 transition-all text-xs"><Icon name="MessageCircle" size={18} /> LINEと連携する</button>
+                                                )}
+                                            </div>
+                                            <button onClick={() => window.location.reload()} className="text-red-400 font-black text-[10px] uppercase tracking-widest pt-10 text-center hover:opacity-70 transition-opacity italic border-none bg-transparent">Logout Academy</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {view === 'notice-history' && (
+                                    <div className="space-y-6 animate-in pt-4 pb-10 px-1">
+                                        <SubHeader title="Archive" sub="Past Notices" />
+                                        <div className="space-y-3">
+                                            {notices.map(notice => (
+                                                <button key={notice.id} onClick={() => setSelectedNotice(notice)} className="card-ui p-5 flex items-center justify-between active:bg-slate-50 w-full text-left">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="bg-slate-50 text-slate-400 p-3 rounded-2xl"><Icon name="Inbox" size={18} /></div>
+                                                        <div><div className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{notice.date}</div><h3 className="text-sm font-black text-slate-800">{notice.title}</h3></div>
+                                                    </div>
+                                                    <Icon name="ChevronRight" size={16} className="text-slate-300" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(view === 'carte' || view === 'video') && <ComingSoon />}
+                            </main>
+                            <footer className="fixed bottom-8 right-8 z-[150] pointer-events-none"><nav className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/60 p-4 pointer-events-auto active:scale-90 transition-transform"><button onClick={() => setView('home')} className={`transition-all ${view === 'home' ? 'text-[#005bac]' : 'text-slate-300'} border-none bg-transparent outline-none`}><Icon name="Home" size={22} /></button></nav></footer>
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
