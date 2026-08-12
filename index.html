@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8LABO ACADEMY Preview</title>
+</head>
+<body>
+  <div id="loading" style="font-family: sans-serif; padding: 24px; text-align: center;">8LABO ACADEMY Preview を読み込んでいます…</div>
+  <script>
+    fetch('./index', { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Preview source could not be loaded.');
+        return response.text();
+      })
+      .then(html => {
+        document.open();
+        document.write(html);
+        document.close();
+      })
+      .catch(error => {
+        document.getElementById('loading').innerHTML = 'Previewの読み込みに失敗しました。<br>GitHub Pagesの公開設定をご確認ください。';
+        console.error(error);
+      });
+  </script>
+</body>
+</html>
