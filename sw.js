@@ -1,8 +1,7 @@
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 
-// Keep the member UI fix lightweight without disturbing the current large index.html.
-// For navigations, inject the portal control and normalize Account -> My Page.
+// Keep ACADEMY navigation consistent with BizFit while leaving the member app logic intact.
 self.addEventListener('fetch',e=>{
   const req=e.request;
   if(req.mode!=='navigate') return;
@@ -11,8 +10,12 @@ self.addEventListener('fetch',e=>{
     const type=res.headers.get('content-type')||'';
     if(!type.includes('text/html')) return res;
     let html=await res.text();
+    const extraStyle='<style>.homeHeader{position:sticky!important;top:0!important;z-index:40!important}.subHeader{position:sticky!important;top:0!important;z-index:40!important}.portalStack{width:42px;height:42px;border:0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}.portalStack strong{font-size:17px;font-weight:900}.portalStack small{font-size:7px;font-weight:800;margin-top:3px}.subPortal{margin-left:auto;background:#eef5fb!important;color:#0b4f8a!important}.subPortal small{font-size:7px}.topActions{display:flex;align-items:center;gap:8px}</style>';
+    html=html.replace('</head>',extraStyle+'</head>');
     html=html.replace('<div class="toprow"><div class="miniBrand">8LABO ACADEMY</div><div class="badgePreview">PREVIEW 016</div></div>',
-      '<div class="toprow"><div class="miniBrand">8LABO ACADEMY</div><div style="display:flex;align-items:center;gap:8px"><a href="https://8labo.github.io/8labo.app.demo/" aria-label="８LABOポータルへ戻る" title="８LABOポータルへ戻る" style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;text-decoration:none" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M9 20v-6h6v6"/></svg></a><div class="badgePreview">PREVIEW 017</div></div></div>');
+      '<div class="toprow"><div class="miniBrand">8LABO ACADEMY</div><div class="topActions"><a class="portalStack" href="https://8labo.github.io/8labo.app.demo/" aria-label="８LABOポータルへ戻る"><strong>８</strong><small>ポータル</small></a><div class="badgePreview">PREVIEW 018</div></div></div>');
+    html=html.replace('<header id="subHeader" class="subHeader"><button id="backHome" class="backBtn">‹</button><div class="subTitle"><b id="subTitleText">予定</b><span id="subTitleSub">ACADEMY</span></div></header>',
+      '<header id="subHeader" class="subHeader"><button id="backHome" class="backBtn">‹</button><div class="subTitle"><b id="subTitleText">予定</b><span id="subTitleSub">ACADEMY</span></div><a class="portalStack subPortal" href="https://8labo.github.io/8labo.app.demo/" aria-label="８LABOポータルへ戻る"><strong>８</strong><small>ポータル</small></a></header>');
     html=html.replace('<div class="sectionTitle"><h3>アカウント</h3><span>登録情報</span></div>','<div class="sectionTitle"><h3>マイページ</h3><span>登録情報</span></div>');
     html=html.replace('</svg></span>アカウント</button></nav>','</svg></span>マイページ</button></nav>');
     html=html.replace("account:['アカウント','登録情報']","account:['マイページ','登録情報']");
